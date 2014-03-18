@@ -4,10 +4,12 @@ SET tmp_table_size = 4294967295;
 SET bulk_insert_buffer_size = 256217728;
 
 # Tables to import data
+DROP TABLE IF EXISTS `dbpedia_types_original`;
 CREATE TABLE `dbpedia_types_original` (
   `resource` varchar(1000) NOT NULL,
   `type` varchar(1000) NOT NULL);
 
+DROP TABLE IF EXISTS `dbpedia_properties_original`;
 CREATE TABLE `dbpedia_properties_original` (
   `subject` varchar(1000) NOT NULL,
   `predicate` varchar(1000) NOT NULL,
@@ -20,10 +22,13 @@ LOAD DATA LOCAL INFILE '/tmp/example_data/instance-types.csv' IGNORE INTO TABLE 
 LOAD DATA LOCAL INFILE '/tmp/example_data/mappingbased-properties-1000.csv' IGNORE INTO TABLE dbpedia_properties_original FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\'' LINES TERMINATED BY '\n';
 
 # Some transformations to allow better indexing - everything is converted to md5 with lookup tables
+DROP TABLE IF EXISTS `dbpedia_types_md5`;
 CREATE TABLE `dbpedia_types_md5` (
   `resource` char(32) NOT NULL,
   `type` char(32) NOT NULL
 );
+
+DROP TABLE IF EXISTS `dbpedia_properties_md5`;
 CREATE TABLE `dbpedia_properties_md5` (
   `subject` char(32) NOT NULL,
   `predicate` char(32) NOT NULL,
@@ -42,6 +47,7 @@ ADD INDEX `idx_dbpedia_properties_subject` (`subject` ASC)
 , ADD INDEX `idx_dbpedia_properties_predicate` (`predicate` ASC) 
 , ADD INDEX `idx_dbpedia_properties_object` (`object` ASC);
 
+DROP TABLE IF EXISTS `dbpedia_type_to_md5`;
 CREATE TABLE `dbpedia_type_to_md5` (
   `type` varchar(1000) NOT NULL,
   `type_md5` char(32) NOT NULL,
@@ -50,6 +56,7 @@ CREATE TABLE `dbpedia_type_to_md5` (
 
 INSERT IGNORE INTO dbpedia_type_to_md5 SELECT type,md5(type) FROM dbpedia_types_original;
 
+DROP TABLE IF EXISTS `dbpedia_resource_to_md5`;
 CREATE TABLE `dbpedia_resource_to_md5` (
   # default: `resource` varchar(1000) NOT NULL
   `resource` varchar(255) NOT NULL,
@@ -61,6 +68,7 @@ CREATE TABLE `dbpedia_resource_to_md5` (
 INSERT IGNORE INTO dbpedia_resource_to_md5 SELECT subject,md5(subject) FROM dbpedia_properties_original;
 INSERT IGNORE INTO dbpedia_resource_to_md5 SELECT object,md5(object) FROM dbpedia_properties_original;
 
+DROP TABLE IF EXISTS `dbpedia_predicate_to_md5`;
 CREATE TABLE `dbpedia_predicate_to_md5` (
   `predicate` varchar(1000) NOT NULL,
   `predicate_md5` char(32) NOT NULL,
@@ -69,6 +77,7 @@ CREATE TABLE `dbpedia_predicate_to_md5` (
 INSERT IGNORE INTO dbpedia_predicate_to_md5 SELECT predicate,md5(predicate) FROM dbpedia_properties_original;
 
 # Compile the statistics
+DROP TABLE IF EXISTS `stat_type_count`;
 CREATE TABLE `stat_type_count` (
   `type` char(32) NOT NULL,
   `type_count` int(11) NOT NULL,
@@ -76,6 +85,7 @@ CREATE TABLE `stat_type_count` (
 
 INSERT INTO stat_type_count SELECT type,COUNT(resource) FROM dbpedia_types_md5 GROUP BY (type);
 
+DROP TABLE IF EXISTS `stat_type_apriori_probability`;
 CREATE TABLE `stat_type_apriori_probability` (
   `type` char(32) NOT NULL,
   `probability` float NOT NULL,
@@ -84,6 +94,7 @@ CREATE TABLE `stat_type_apriori_probability` (
 
 INSERT INTO stat_type_apriori_probability select type,type_count/(select count(resource_md5) from dbpedia_resource_to_md5) AS rel_count from stat_type_count;
 
+DROP TABLE IF EXISTS `stat_resource_predicate_tf`;
 CREATE TABLE `stat_resource_predicate_tf` (
   `resource` char(32) NOT NULL,
   `predicate` char(32) NOT NULL,
@@ -96,6 +107,7 @@ CREATE TABLE `stat_resource_predicate_tf` (
 INSERT INTO stat_resource_predicate_tf SELECT subject, predicate, COUNT(object),0 FROM dbpedia_properties_md5 GROUP BY subject, predicate;
 INSERT INTO stat_resource_predicate_tf SELECT object, predicate, COUNT(subject),1 FROM dbpedia_properties_md5 GROUP BY object, predicate;
 
+DROP TABLE IF EXISTS `stat_type_predicate_percentage`;
 CREATE TABLE `stat_type_predicate_percentage` (
   `type` char(32) NOT NULL,
   `predicate` char(32) NOT NULL,
@@ -121,6 +133,7 @@ WHERE
 res.object = types.resource
 GROUP BY res.predicate,types.type;
 
+DROP TABLE IF EXISTS `stat_predicate_weight_apriori`;
 CREATE TABLE `stat_predicate_weight_apriori` (
   `predicate` char(32) NOT NULL,
   `outin` int(11) NOT NULL,
@@ -135,6 +148,7 @@ GROUP BY predicate,outin;
 # Materialize the Types
 # uses one intermediate table
 
+DROP TABLE IF EXISTS `dbpedia_untyped_instance`;
 CREATE  TABLE `dbpedia_untyped_instance` (
   `resource` VARCHAR(1000) NOT NULL ,
   `resource_md5` CHAR(32) NOT NULL );
@@ -143,6 +157,7 @@ INSERT INTO dbpedia_untyped_instance SELECT res.resource,res.resource_md5 FROM d
 LEFT JOIN dbpedia_types_md5 as typ ON res.resource_md5=typ.resource
 WHERE ISNULL(type);
 
+DROP TABLE IF EXISTS `stat_resource_predicate_type`;
 CREATE TABLE `stat_resource_predicate_type` (
   `resource` char(32) NOT NULL,
   `predicate` char(32) NOT NULL,
@@ -162,6 +177,7 @@ LEFT JOIN stat_predicate_weight_apriori as weight on tf.predicate = weight.predi
 LEFT JOIN stat_type_apriori_probability as tap on perc.type = tap.type
 LEFT JOIN dbpedia_type_to_md5 as t2md5 on tap.type = t2md5.type_md5;
 
+DROP TABLE IF EXISTS `resulting_types`;
 CREATE  TABLE `resulting_types` (
   `resource` VARCHAR(1000) NOT NULL ,
   `type` VARCHAR(1000) NOT NULL ,
