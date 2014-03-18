@@ -15,9 +15,9 @@ CREATE TABLE `dbpedia_properties_original` (
   
 # Import data
 # Note: requires preprocessed data files using NT2CSV.java
-LOAD DATA LOCAL INFILE '/Users/nico/Arbeit/hiwi_semantic_web/Type_inference/generate-types/example_data/instance-types.csv' IGNORE INTO TABLE dbpedia_types_original FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\'' LINES TERMINATED BY '\r\n';
+LOAD DATA LOCAL INFILE '/tmp/example_data/instance-types.csv' IGNORE INTO TABLE dbpedia_types_original FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\'' LINES TERMINATED BY '\n';
 
-LOAD DATA LOCAL INFILE '/Users/nico/Arbeit/hiwi_semantic_web/Type_inference/generate-types/example_data/mappingbased-1000.csv' IGNORE INTO TABLE dbpedia_properties_original FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\'' LINES TERMINATED BY '\r\n';
+LOAD DATA LOCAL INFILE '/tmp/example_data/mappingbased-properties-1000.csv' IGNORE INTO TABLE dbpedia_properties_original FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\'' LINES TERMINATED BY '\n';
 
 # Some transformations to allow better indexing - everything is converted to md5 with lookup tables
 CREATE TABLE `dbpedia_types_md5` (
@@ -29,7 +29,7 @@ CREATE TABLE `dbpedia_properties_md5` (
   `predicate` char(32) NOT NULL,
   `object` char(32) NOT NULL
 );
-INSERT INTO dbpedia_types_md5 SELECT md5(resource),md5(type) FROM dbpedia_types_original;
+INSERT INTO dbpedia_types_md5 SELECT md5(resource),md5(type) FROM  dbpedia_types_original;
 
 ALTER TABLE `dbpedia_types_md5` 
 ADD INDEX `idx_dbpedia_types_resource` (`resource` ASC) 
@@ -45,16 +45,19 @@ ADD INDEX `idx_dbpedia_properties_subject` (`subject` ASC)
 CREATE TABLE `dbpedia_type_to_md5` (
   `type` varchar(1000) NOT NULL,
   `type_md5` char(32) NOT NULL,
-  PRIMARY KEY (`type_md5`);
+  PRIMARY KEY (`type_md5`)
 );
+
 INSERT IGNORE INTO dbpedia_type_to_md5 SELECT type,md5(type) FROM dbpedia_types_original;
 
 CREATE TABLE `dbpedia_resource_to_md5` (
-  `resource` varchar(1000) NOT NULL,
+  # default: `resource` varchar(1000) NOT NULL
+  `resource` varchar(255) NOT NULL,
   `resource_md5` char(32) NOT NULL,
   PRIMARY KEY (`resource_md5`),
-  key `idx_resource_to_md5` (`resource`);
+  key `idx_resource_to_md5` (`resource`)
 );
+
 INSERT IGNORE INTO dbpedia_resource_to_md5 SELECT subject,md5(subject) FROM dbpedia_properties_original;
 INSERT IGNORE INTO dbpedia_resource_to_md5 SELECT object,md5(object) FROM dbpedia_properties_original;
 
@@ -131,6 +134,7 @@ GROUP BY predicate,outin;
 
 # Materialize the Types
 # uses one intermediate table
+
 CREATE  TABLE `dbpedia_untyped_instance` (
   `resource` VARCHAR(1000) NOT NULL ,
   `resource_md5` CHAR(32) NOT NULL );
@@ -156,13 +160,14 @@ LEFT JOIN stat_resource_predicate_tf as tf on instance.resource_md5 = tf.resourc
 LEFT JOIN stat_type_predicate_percentage as perc on tf.predicate = perc.predicate and tf.outin = perc.outin 
 LEFT JOIN stat_predicate_weight_apriori as weight on tf.predicate = weight.predicate and tf.outin = weight.outin
 LEFT JOIN stat_type_apriori_probability as tap on perc.type = tap.type
-LEFT JOIN dbpedia_type_to_md5 as t2md5 on tap.type = t2md5.type_md5:
+LEFT JOIN dbpedia_type_to_md5 as t2md5 on tap.type = t2md5.type_md5;
 
 CREATE  TABLE `resulting_types` (
   `resource` VARCHAR(1000) NOT NULL ,
   `type` VARCHAR(1000) NOT NULL ,
   `score` FLOAT NOT NULL );
-INSERT INTO resulting_types2 
+
+INSERT INTO resulting_types 
 SELECT resource,type,SUM(tf*percentage*weight)/SUM(tf*weight) AS score FROM stat_resource_predicate_type GROUP BY resource,type HAVING score>=0.05;
 
 # Read types at the threshold you like, e.g.
