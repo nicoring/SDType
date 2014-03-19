@@ -175,7 +175,8 @@ LEFT JOIN stat_resource_predicate_tf as tf on instance.resource_md5 = tf.resourc
 LEFT JOIN stat_type_predicate_percentage as perc on tf.predicate = perc.predicate and tf.outin = perc.outin 
 LEFT JOIN stat_predicate_weight_apriori as weight on tf.predicate = weight.predicate and tf.outin = weight.outin
 LEFT JOIN stat_type_apriori_probability as tap on perc.type = tap.type
-LEFT JOIN dbpedia_type_to_md5 as t2md5 on tap.type = t2md5.type_md5;
+LEFT JOIN dbpedia_type_to_md5 as t2md5 on tap.type = t2md5.type_md5
+WHERE NOT perc.type IS NULL;
 
 DROP TABLE IF EXISTS `resulting_types`;
 CREATE  TABLE `resulting_types` (
