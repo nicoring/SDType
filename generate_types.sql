@@ -74,6 +74,7 @@ CREATE TABLE `dbpedia_predicate_to_md5` (
   `predicate_md5` char(32) NOT NULL,
   PRIMARY KEY `idx_predicate_to_md5_type_md5` (`predicate_md5`)
 );
+
 INSERT IGNORE INTO dbpedia_predicate_to_md5 SELECT predicate,md5(predicate) FROM dbpedia_properties_original;
 
 # Compile the statistics
@@ -101,7 +102,7 @@ CREATE TABLE `stat_resource_predicate_tf` (
   `tf` int(11) NOT NULL,
   `outin` int(11) NOT NULL,
   KEY `idx_resource_predicate_tf_resource` (`resource`),
-  KEY `idx_resource_predicate_tf_predicate` (`predicate`)
+  KEY `idx_resource_predicate_tf_predicate` (`predicate`),
 );
 
 INSERT INTO stat_resource_predicate_tf SELECT subject, predicate, COUNT(object),0 FROM dbpedia_properties_md5 GROUP BY subject, predicate;
