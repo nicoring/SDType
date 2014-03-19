@@ -37,15 +37,15 @@ CREATE TABLE `dbpedia_properties_md5` (
 INSERT INTO dbpedia_types_md5 SELECT md5(resource),md5(type) FROM  dbpedia_types_original;
 
 ALTER TABLE `dbpedia_types_md5` 
-ADD INDEX `idx_dbpedia_types_resource` (`resource` ASC) 
-, ADD INDEX `idx_dbpedia_types_type` (`type` ASC);
+ADD INDEX `idx_dbpedia_types_resource` (`resource` ASC),
+ADD INDEX `idx_dbpedia_types_type` (`type` ASC);
 
 INSERT INTO dbpedia_properties_md5 SELECT md5(subject), md5(predicate), md5(object) FROM dbpedia_properties_original;
 
 ALTER TABLE `dbpedia_properties_md5` 
-ADD INDEX `idx_dbpedia_properties_subject` (`subject` ASC) 
-, ADD INDEX `idx_dbpedia_properties_predicate` (`predicate` ASC) 
-, ADD INDEX `idx_dbpedia_properties_object` (`object` ASC);
+ADD INDEX `idx_dbpedia_properties_subject` (`subject` ASC),
+ADD INDEX `idx_dbpedia_properties_predicate` (`predicate` ASC),
+ADD INDEX `idx_dbpedia_properties_object` (`object` ASC);
 
 DROP TABLE IF EXISTS `dbpedia_type_to_md5`;
 CREATE TABLE `dbpedia_type_to_md5` (
@@ -184,7 +184,10 @@ CREATE  TABLE `resulting_types` (
   `score` FLOAT NOT NULL );
 
 INSERT INTO resulting_types 
-SELECT resource,type,SUM(tf*percentage*weight)/SUM(tf*weight) AS score FROM stat_resource_predicate_type GROUP BY resource,type HAVING score>=0.05;
+SELECT resource,type,SUM(tf*percentage*weight)/SUM(tf*weight) AS score
+FROM stat_resource_predicate_type 
+GROUP BY resource,type 
+HAVING score>=0.05;
 
 # Read types at the threshold you like, e.g.
 # SELECT r2md5.resource,t2md5.type FROM resulting_types AS res
