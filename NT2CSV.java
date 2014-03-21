@@ -8,19 +8,20 @@ public class NT2CSV {
 	
 	// the path that contains the files instance-types.nt and mappingbased-properties.nt
 	// TODO put in your path
-	private static String folder = "/Users/nico/Arbeit/hiwi_semantic_web/Type_inference/generate-types/example_data";
+	// TODO change the language prefix in both inFiles and outFiles
+	private static String folder = "PATH_TO_YOUR_DATA";
 
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) throws Exception {
-		//convertTypeFile();
+		convertTypeFile();
 		convertMappingBasedPropertiesOnlyDBpedia();
 	}
 	
 	private static void convertTypeFile() throws Exception {
-		String inFile = folder + "instance-types.nt";
-		String outFile = folder + "instance-types.csv";
+		String inFile = folder + "/instance_types_prefix.nt";
+		String outFile = folder + "/instance_types_prefix.csv";
 		
 		BufferedReader reader = new BufferedReader(new FileReader(inFile));
 		BufferedWriter writer = new BufferedWriter(new FileWriter(outFile));
@@ -40,7 +41,7 @@ public class NT2CSV {
 			s = s.replaceAll("<","'");
 			s = s.replaceAll(">", "'");
 			s = s.replaceAll(" .", "");
-			writer.write(s + System.lineSeparator());
+			writer.write(s + System.getProperty("line.separator"));
 			if(++lines%1000000==0)
 				System.out.println(lines + " lines processed");
 		}
@@ -50,8 +51,8 @@ public class NT2CSV {
 	}
 
 	private static void convertMappingBasedPropertiesOnlyDBpedia() throws Exception {
-		String inFile = folder + "/mappingbased-properties-1000.nt";
-		String outFile = folder + "/mappingbased-properties-1000.csv";
+		String inFile = folder + "/mappingbased_properties_prefix.nt";
+		String outFile = folder + "/mappingbased_properties_prefix.csv";
 		
 		BufferedReader reader = new BufferedReader(new FileReader(inFile));
 		BufferedWriter writer = new BufferedWriter(new FileWriter(outFile));
@@ -87,7 +88,7 @@ public class NT2CSV {
 						object = object.replace("'","\\'");
 					object = object.replace("<","");
 					line += "'" + object+ "'";
-					writer.write(line + System.lineSeparator());
+					writer.write(line + System.getProperty("line.separator"));
 				}
 				if(++lines%1000000==0)
 					System.out.println(lines + " lines processed");
