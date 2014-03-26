@@ -193,8 +193,31 @@ FROM prefix_stat_resource_predicate_type
 GROUP BY resource,type 
 HAVING score>=0.05;
 
-# Read types at the threshold you like, e.g.
-# SELECT r2md5.resource,t2md5.type FROM resulting_types AS res
-# LEFT JOIN dbpedia_resource_to_md5 AS r2md5 ON res.resource=r2md5.resource_md5
-# LEFT JOIN dbpedia_type_to_md5 AS t2md5 ON res.type=t2md5.type_md5
-# WHERE score>=0.4
+DROP TABLE IF EXISTS `prefix_resulting_types_readable`;
+CREATE TABLE `prefix_resulting_types_readable` (
+  `resource` varchar(1000) NOT NULL,
+  `type` varchar(1000) NOT NULL,
+  `score` float NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO prefix_resulting_types_readable
+SELECT r2md5.resource,t2md5.type, score FROM prefix_resulting_types AS res
+LEFT JOIN prefix_dbpedia_resource_to_md5 AS r2md5 ON res.resource=r2md5.resource_md5
+LEFT JOIN prefix_dbpedia_type_to_md5 AS t2md5 ON res.type=t2md5.type_md5;
+
+# Filter results and write into outfile
+DROP TABLE IF EXISTS `prefix_resulting_types_filtered`;
+CREATE TABLE `prefix_resulting_types_filtered` (
+  `resource` varchar(1000) NOT NULL,
+  `type` varchar(1000) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO `prefix_resulting_types_filtered` 
+SELECT resource, type
+FROM `prefix_resulting_types_readable`
+WHERE score >= 0.7
+GROUP BY resource, type;
+
+SELECT concat('<', resource, '> ', '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ' , '<',type, '> .')
+FROM `prefix_resulting_types_filtered`
+INTO OUTFILE '/tmp/generated_instance_types_prefix.nt';
