@@ -3,9 +3,9 @@ Generating Missing Types for DBpedia
 
 This is based on the package, which can be found here http://wifo5-21.informatik.uni-mannheim.de:8080/DBpediaTypeCompletionService/ 
 
-This package of scripts allows to generate types for untyped instances in DBpedia, as described in [1]. To produce the types, please perform the following steps:
+This package of scripts allows to generate types for untyped instances in DBpedia, as described in [Paulheim and Bizer: Type Inference on Noisy RDF Data. In: International Semantic Web Conference (ISWC), 2013][1]. To produce the types, please perform the following steps:
 
-1. Get the mappingbased-properties.nt and instance-types.nt files from the DBpedia download page [2], and store them in a local folder.
+1. Get the mappingbased-properties.nt and instance-types.nt files from the [DBpedia download page][2], and store them in a local folder.
 
 2. Put the local folder name in the Java program NT2CSV.java, and run the Java program. It produces two output files.
 
@@ -21,6 +21,5 @@ A few hints on configuration parameters for MySQL:
 * If the import from files does not work, start mysql with the parameter --local-infile
 * Set the config variable innodb_buffer_pool_size to 4294967295 in the MySQL config file
 
-[1] Paulheim and Bizer: Type Inference on Noisy RDF Data. In: International Semantic Web Conference (ISWC), 2013.
-    http://www.heikopaulheim.com/docs/iswc2013.pdf
-[2] http://wiki.dbpedia.org/Downloads
+[1]: http://www.heikopaulheim.com/docs/iswc2013.pdf
+[2]: http://wiki.dbpedia.org/Downloads
