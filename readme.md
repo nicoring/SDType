@@ -5,13 +5,7 @@ This is based on the package, which can be found here http://wifo5-21.informatik
 
 This package of scripts allows to generate types for untyped instances in DBpedia, as described in [Paulheim and Bizer: Type Inference on Noisy RDF Data. In: International Semantic Web Conference (ISWC), 2013][1]. To produce the types, please perform the following steps:
 
-<<<<<<< HEAD
 1. Run the Shell Script getcsv.sh this will produce two files
-=======
-1. Get the mappingbased-properties.nt and instance-types.nt files from the [DBpedia download page][2], and store them in a local folder.
-
-2. Put the local folder name in the Java program NT2CSV.java, and run the Java program. It produces two output files.
->>>>>>> FETCH_HEAD
 
 3. Create a MySQL database.
 
